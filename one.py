@@ -65,15 +65,17 @@ def reported_data(cookies, headers):
     return get(ONE_REPORTED_DATA, cookies=cookies, headers=headers).json()
 
 
-if __name__ == '__main__':
-    cookies_path = 'config.json'
-    one_cookies = load_cookies(cookies_path)
-    browser_headers = HEADERS
-    user = authenticate(one_cookies, browser_headers)
+def run(path, headers, main_code, secondary_code):
+    one_cookies = load_cookies(path)
+    user = authenticate(one_cookies, headers)
     if not user:
         print("--> ERROR: Authentication Failure.")
         exit()
     update_cookies(one_cookies, user.cookies)
-    save_cookies(cookies_path, one_cookies)
-    attend(one_cookies, browser_headers, '01', '01')
-    pprint(reported_data(one_cookies, browser_headers))
+    save_cookies(path, one_cookies)
+    attend(one_cookies, headers, main_code, secondary_code)
+    pprint(reported_data(one_cookies, headers))
+
+
+if __name__ == '__main__':
+    run('config.json', HEADERS, '01', '01')
