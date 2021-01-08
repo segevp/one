@@ -1,7 +1,3 @@
 {
-    "AppCookie": "<REQUIRED_COOKIE>",
-    "BIGipServerMFT-One-Frontends": "<REQUIRED_COOKIE>",
-    "visid_incap_2025883": "<OPTIONAL_COOKIE>",
-    "incap_ses_254_2025883": "<OPTIONAL_COOKIE>",
-    "nlbi_2025883": "<OPTIONAL_COOKIE>"
+    "AppCookie": "<REQUIRED_COOKIE>"
 }
