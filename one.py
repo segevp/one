@@ -1,45 +1,79 @@
 from requests import get, post
 from json.decoder import JSONDecodeError
-from json import load
+from json import load, dump
 from pprint import pprint
 
-# One Relevant URLs
-ONE_URL = "https://one.prat.idf.il"
-ONE_USER = ONE_URL + "/api/account/getUser"
-ONE_REPORTED_DATA = ONE_URL + "/api/Attendance/GetReportedData"
-ONE_MEMBER_HISTORY = ONE_URL + "/api/Attendance/memberHistory"
-ONE_ATTEND = ONE_URL + '/api/Attendance/InsertPersonalReport'
+ONE_API = "https://one.prat.idf.il/api"
+ONE_USER = ONE_API + "/account/getUser"
+ONE_REPORTED_DATA = ONE_API + "/Attendance/GetReportedData"
+ONE_MEMBER_HISTORY = ONE_API + "/Attendance/memberHistory"
+ONE_ATTEND = ONE_API + '/Attendance/InsertPersonalReport'
 
-# One Constants
-ONE_ATTENDANCE_FORM = {
-    'MainCode': '01',
-    'SecondaryCode': '01'
-}
+RELEVANT_COOKIES = [
+    "AppCookie",
+    "visid_incap_2025883",
+    "incap_ses_253_2025883",
+    "nlbi_2025883",
+    "BIGipServerMFT-One-Frontends"
+]
+SAVE_COOKIES = [
+    "AppCookie",
+    "visid_incap_2025883"
+]
 
-# Cookies and Headers
 HEADERS = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                   'AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/86.0.4240.183 Safari/537.36'
 }
-with open('config.json', 'rb') as f:
-    COOKIES = load(f)
 
-# BODY
-# Test Authentication
-user_response = get(ONE_USER, cookies=COOKIES, headers=HEADERS)
-try:
-    connection_check = user_response.json()
-except JSONDecodeError:
-    print("--> ERROR: Authentication Failure!")
-    exit()
 
-# Update cookies
-COOKIES.update(user_response.cookies)
+def load_cookies(path):
+    with open(path, 'rb') as f:
+        cookies = load(f)
+    return cookies if "AppCookie" in cookies else None
 
-# Attend
-print("--> Reporting attendance...")
-x = post(ONE_ATTEND, ONE_ATTENDANCE_FORM)
-print(x.content)
-print("--> Done! Reported Form:")
-pprint(get(ONE_REPORTED_DATA, cookies=COOKIES, headers=HEADERS).json())
+
+def authenticate(cookies, headers):
+    user_response = get(ONE_USER, cookies=cookies, headers=headers)
+    try:
+        return user_response
+    except JSONDecodeError:
+        pass
+
+
+def update_cookies(old, new):
+    relevant_cookies = {key: val for key, val in new.items() if key in RELEVANT_COOKIES}
+    old.update(relevant_cookies)
+
+
+def save_cookies(path, cookies):
+    cookies_to_save = {key: val for key, val in cookies.items if key in SAVE_COOKIES}
+    with open(path, 'wb') as f:
+        dump(cookies_to_save, f, ensure_ascii=False)
+
+
+def attend(cookies, headers, main_code: str, secondary_code: str):
+    attendance_form = {
+        'MainCode': main_code,
+        'SecondaryCode': secondary_code
+    }
+    post(ONE_ATTEND, attendance_form, cookies=cookies, headers=headers)
+
+
+def reported_data(cookies, headers):
+    return get(ONE_REPORTED_DATA, cookies=cookies, headers=headers).json()
+
+
+if __name__ == '__main__':
+    cookies_path = 'config.json'
+    one_cookies = load_cookies(cookies_path)
+    browser_headers = HEADERS
+    user = authenticate(one_cookies, browser_headers)
+    if not user:
+        print("--> ERROR: Authentication Failure.")
+        exit()
+    update_cookies(one_cookies, user.cookies)
+    save_cookies(cookies_path, one_cookies)
+    attend(one_cookies, browser_headers, '01', '01')
+    pprint(reported_data(one_cookies, browser_headers))
