@@ -48,9 +48,9 @@ def update_cookies(old, new):
 
 
 def save_cookies(path, cookies):
-    cookies_to_save = {key: val for key, val in cookies.items if key in SAVE_COOKIES}
-    with open(path, 'wb') as f:
-        dump(cookies_to_save, f, ensure_ascii=False)
+    cookies_to_save = {key: val for key, val in cookies.items() if key in SAVE_COOKIES}
+    with open(path, 'w') as f:
+        dump(cookies_to_save, f, indent=4)
 
 
 def attend(cookies, headers, main_code: str, secondary_code: str):
