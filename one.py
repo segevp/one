@@ -29,8 +29,12 @@ HEADERS = {
 
 
 def load_cookies(path):
+    cookies = {}
     with open(path, 'rb') as f:
-        cookies = load(f)
+        try:
+            cookies = load(f)
+        except JSONDecodeError:
+            pass
     return cookies if "AppCookie" in cookies else None
 
 
