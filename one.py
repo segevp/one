@@ -1,6 +1,11 @@
 from requests import get, post
 from json.decoder import JSONDecodeError
 from json import load, dump
+import logging
+
+logger = logging.getLogger('one')
+logging.basicConfig(filename='one.log', level=logging.DEBUG,
+                    format='%(asctime)s - %(filename)s - %(levelname)s - %(message)s')
 
 ONE_API = "https://one.prat.idf.il/api"
 ONE_USER = ONE_API + "/account/getUser"
@@ -46,7 +51,7 @@ class Soldier:
             cookies = load(f)
         if "AppCookie" not in cookies:
             raise KeyError("Needed cookie not found")
-        return cookies if "AppCookie" in cookies else None
+        return cookies
 
     def _save_cookies(self):
         cookies_to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES)
@@ -60,7 +65,10 @@ class Soldier:
         if to_save:
             self._save_cookies()
 
-    def _request(self, url, data=None):
+    def _request(self, url, data=None, ignore_auth=False):
+        if not ignore_auth:
+            if not self.authenticated:
+                return None
         request = get
         request_params = {
             'headers': self.headers,
@@ -71,25 +79,30 @@ class Soldier:
             request_params['data'] = data
             request = post
         response = request(**request_params)
+        logging.debug(f"HTTP {request.__name__.upper()} request sent to {request_params['url']}")
         return response
 
     def _authenticate(self):
-        response = self._request(ONE_USER)
+        response = self._request(ONE_USER, ignore_auth=True)
         try:
             response.json()
         except JSONDecodeError:
+            logging.error(f"Failed authentication with the given AppCookie: '{self.cookies['AppCookie']}'")
             return False
         self._update_cookies(response.cookies)
+        logging.debug(f"Authenticated successfully with the given AppCookie: '{self.cookies['AppCookie']}'")
         return True
 
     def attend(self, main_code: str, secondary_code: str):
         if not self._check_status_validity(main_code, secondary_code):
+            logging.error("Attendance was not sent")
             return None
         attendance_form = {
             'MainCode': main_code,
             'SecondaryCode': secondary_code
         }
         self._request(ONE_ATTEND, attendance_form)
+        logging.info(f"Sent attendance successfully (main code: {main_code}, secondary code: {secondary_code})")
 
     @property
     def reported_data(self):
@@ -102,9 +115,14 @@ class Soldier:
     def _check_status_validity(self, main_code, secondary_code):
         for primary in self._possible_statuses['primaries']:
             if primary['statusCode'] == main_code:
+                primary_desc = primary['statusDescription']
                 for secondary in primary['secondaries']:
                     if secondary['statusCode'] == secondary_code:
+                        secondary_desc = primary['statusDescription']
+                        logging.debug(f"Main code {main_code} ({primary_desc}) "
+                                      f"and secondary code {secondary_code} ({secondary_desc}) are valid")
                         return True
+        logging.warning(f"Main code {main_code} and secondary code {secondary_code} are not valid")
         return False
 
 
