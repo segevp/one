@@ -1,7 +1,6 @@
 from requests import get, post
 from json.decoder import JSONDecodeError
 from json import load, dump
-from pprint import pprint
 
 ONE_API = "https://one.prat.idf.il/api"
 ONE_USER = ONE_API + "/account/getUser"
@@ -27,15 +26,21 @@ HEADERS = {
 }
 
 
+class Utils:
+    @staticmethod
+    def filter_dict(d, keys):
+        return {key: val for key, val in d.items() if key in keys}
+
+
 class Soldier:
     def __init__(self, path):
-        self.headers = HEADERS
         self.path = path
+        self.headers = HEADERS
+        self.cookies = self._load_cookies()
 
-        self.cookies = self.load_cookies()
-        self.authenticated = self.authenticate()
+        self.authenticated = self._authenticate()
 
-    def load_cookies(self):
+    def _load_cookies(self):
         with open(self.path, 'rb') as f:
             cookies = load(f)
         if "AppCookie" not in cookies:
@@ -43,35 +48,49 @@ class Soldier:
         return cookies if "AppCookie" in cookies else None
 
     def _save_cookies(self):
-        cookies_to_save = {key: val for key, val in self.cookies.items() if key in SAVE_COOKIES}
+        cookies_to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES)
         with open(self.path, 'w') as f:
             dump(cookies_to_save, f, indent=4)
 
     def _update_cookies(self, new):
-        to_save = len({key: val for key, val in self.cookies.items() if key in SAVE_COOKIES}) != self.cookies
-        relevant_cookies = {key: val for key, val in new.items() if key in RELEVANT_COOKIES}
+        to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES) != self.cookies
+        relevant_cookies = Utils.filter_dict(new, RELEVANT_COOKIES)
         self.cookies.update(relevant_cookies)
         if to_save:
             self._save_cookies()
 
-    def authenticate(self):
+    def _request(self, url, data=None):
+        request = get
+        request_params = {
+            'headers': self.headers,
+            'cookies': self.cookies,
+            'url': url
+        }
+        if data:
+            request_params['data'] = data
+            request = post
+        response = request(**request_params)
+        return response
+
+    def _authenticate(self):
+        response = self._request(ONE_USER)
         try:
-            response = get(ONE_USER, cookies=self.cookies, headers=self.headers)
-            self._update_cookies(response.cookies)
-            return True
+            response.json()
         except JSONDecodeError:
             return False
+        self._update_cookies(response.cookies)
+        return True
 
     def attend(self, main_code: str, secondary_code: str):
         attendance_form = {
             'MainCode': main_code,
             'SecondaryCode': secondary_code
         }
-        post(ONE_ATTEND, attendance_form, cookies=self.cookies, headers=self.headers)
+        self._request(ONE_ATTEND, attendance_form)
 
     @property
     def reported_data(self):
-        return get(ONE_REPORTED_DATA, cookies=self.cookies, headers=self.headers).json()
+        return self._request(ONE_REPORTED_DATA).json()
 
 
 if __name__ == '__main__':
