@@ -6,6 +6,7 @@ ONE_API = "https://one.prat.idf.il/api"
 ONE_USER = ONE_API + "/account/getUser"
 ONE_REPORTED_DATA = ONE_API + "/Attendance/GetReportedData"
 ONE_ATTEND = ONE_API + '/Attendance/InsertPersonalReport'
+ONE_STATUSES = ONE_API + '/Attendance/GetAllFilterStatuses'
 
 RELEVANT_COOKIES = [
     "AppCookie",
@@ -91,6 +92,10 @@ class Soldier:
     @property
     def reported_data(self):
         return self._request(ONE_REPORTED_DATA).json()
+
+    @property
+    def _possible_statuses(self):
+        return self._request(ONE_STATUSES).json()
 
 
 if __name__ == '__main__':
