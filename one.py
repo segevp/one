@@ -83,6 +83,8 @@ class Soldier:
         return True
 
     def attend(self, main_code: str, secondary_code: str):
+        if not self._check_status_validity(main_code, secondary_code):
+            return None
         attendance_form = {
             'MainCode': main_code,
             'SecondaryCode': secondary_code
@@ -96,6 +98,14 @@ class Soldier:
     @property
     def _possible_statuses(self):
         return self._request(ONE_STATUSES).json()
+
+    def _check_status_validity(self, main_code, secondary_code):
+        for primary in self._possible_statuses['primaries']:
+            if primary['statusCode'] == main_code:
+                for secondary in primary['secondaries']:
+                    if secondary['statusCode'] == secondary_code:
+                        return True
+        return False
 
 
 if __name__ == '__main__':
