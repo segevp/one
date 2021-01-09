@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger('one')
 logging.basicConfig(filename='one.log', level=logging.DEBUG,
-                    format='%(asctime)s - %(filename)s - %(levelname)s - %(message)s')
+                    format='%(asctime)s - %(module)s - %(levelname)s - %(message)s')
 
 ONE_API = "https://one.prat.idf.il/api"
 ONE_USER = ONE_API + "/account/getUser"
