@@ -4,7 +4,7 @@ from json import load, dump
 import logging
 
 logger = logging.getLogger('one')
-logging.basicConfig(filename='one.log', level=logging.DEBUG,
+logging.basicConfig(filename='/root/Projects/one/one.log', level=logging.DEBUG,
                     format='%(asctime)s - %(module)s - %(levelname)s - %(message)s')
 
 ONE_API = "https://one.prat.idf.il/api"
@@ -127,5 +127,5 @@ class Soldier:
 
 
 if __name__ == '__main__':
-    soldier = Soldier('config.json')
+    soldier = Soldier('/root/Projects/one/config.json')
     soldier.attend('01', '01')
