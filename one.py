@@ -59,7 +59,7 @@ class Soldier:
             dump(cookies_to_save, f, indent=4)
 
     def _update_cookies(self, new):
-        to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES) != self.cookies
+        to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES) != Utils.filter_dict(new, SAVE_COOKIES)
         relevant_cookies = Utils.filter_dict(new, RELEVANT_COOKIES)
         self.cookies.update(relevant_cookies)
         if to_save:
