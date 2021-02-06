@@ -4,7 +4,7 @@ from json import load, dump
 import logging
 
 logger = logging.getLogger('one')
-logging.basicConfig(filename='/root/Projects/one/one.log', level=logging.DEBUG,
+logging.basicConfig(filename='one.log', level=logging.DEBUG,
                     format='%(asctime)s - %(module)s - %(levelname)s - %(message)s')
 
 ONE_API = "https://one.prat.idf.il/api"
@@ -39,31 +39,14 @@ class Utils:
 
 
 class Soldier:
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, cookies):
         self.headers = HEADERS
-        self.cookies = self._load_cookies()
-
+        self.cookies = Utils.filter_dict(cookies, RELEVANT_COOKIES)
         self.authenticated = self._authenticate()
 
-    def _load_cookies(self):
-        with open(self.path, 'rb') as f:
-            cookies = load(f)
-        if "AppCookie" not in cookies:
-            raise KeyError("Needed cookie not found")
-        return cookies
-
-    def _save_cookies(self):
-        cookies_to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES)
-        with open(self.path, 'w') as f:
-            dump(cookies_to_save, f, indent=4)
-
     def _update_cookies(self, new):
-        to_save = Utils.filter_dict(self.cookies, SAVE_COOKIES) != Utils.filter_dict(new, SAVE_COOKIES)
         relevant_cookies = Utils.filter_dict(new, RELEVANT_COOKIES)
         self.cookies.update(relevant_cookies)
-        if to_save:
-            self._save_cookies()
 
     def _request(self, url, data=None, ignore_auth=False):
         if not ignore_auth:
@@ -83,6 +66,9 @@ class Soldier:
         return response
 
     def _authenticate(self):
+        if "AppCookie" not in self.cookies:
+            logging.error("AppCookie not given")
+            return False
         response = self._request(ONE_USER, ignore_auth=True)
         try:
             response.json()
@@ -127,5 +113,17 @@ class Soldier:
 
 
 if __name__ == '__main__':
-    soldier = Soldier('/root/Projects/one/config.json')
-    soldier.attend('01', '01')
+    config_path = 'config.json'
+    with open(config_path, 'rb') as f:
+        config = load(f)
+
+    for i in range(len(config['soldiers'])):
+        soldier_config = config['soldiers'][i]
+        if soldier_config['enabled']:
+            soldier = Soldier(soldier_config['cookies'])
+            soldier.attend('01', '01')
+            save_cookies = Utils.filter_dict(soldier_config['cookies'], SAVE_COOKIES)
+            config['soldiers'][i]['cookies'] = save_cookies
+
+    with open(config_path, 'w') as f:
+        dump(config, f, indent=2)

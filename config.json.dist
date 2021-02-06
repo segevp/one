@@ -1,3 +1,10 @@
 {
-    "AppCookie": "<REQUIRED_COOKIE>"
+  "soldiers": [
+    {
+      "enabled": true,
+      "cookies": {
+        "AppCookie": "<REQUIRED_COOKIE>"
+      }
+    }
+  ]
 }
