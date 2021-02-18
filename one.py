@@ -122,7 +122,7 @@ if __name__ == '__main__':
         if soldier_config['enabled']:
             soldier = Soldier(soldier_config['cookies'])
             soldier.attend('01', '01')
-            save_cookies = Utils.filter_dict(soldier_config['cookies'], SAVE_COOKIES)
+            save_cookies = Utils.filter_dict(soldier.cookies, SAVE_COOKIES)
             config['soldiers'][i]['cookies'] = save_cookies
 
     with open(config_path, 'w') as f:
