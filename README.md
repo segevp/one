@@ -1,2 +1,2 @@
-# one
-access one-prat api via python
+# One (discontinued)
+A program to automatically report attendancy, using one-prat reverse-engineered API.
